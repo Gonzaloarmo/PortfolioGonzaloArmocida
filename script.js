@@ -162,7 +162,7 @@ addEventListener('pointermove', (e) => {
 /* ---------- sound (Web Audio, off by default) ---------- */
 const sfx = (() => {
   let ctx = null, master = null, hum = null, on = false;
-  try { on = localStorage.getItem('gos-sound') === '1'; } catch (e) {}
+  try { on = localStorage.getItem('gos-sound') !== '0'; } catch (e) {}
   const ensure = () => {
     if (!on) return null;
     if (!ctx) {
@@ -229,7 +229,7 @@ const sfx = (() => {
       if (v) { ensure(); api.click(); if (phase === 'desk') api.startHum(); }
       else { api.stopHum(); if (ctx) ctx.suspend(); }
     },
-    wake() { if (on && ctx && ctx.state === 'suspended') ctx.resume(); if (on && phase === 'desk' && !hum) api.startHum(); },
+    wake() { if (on) ensure(); if (on && ctx && ctx.state === 'suspended') ctx.resume(); if (on && phase === 'desk' && !hum) api.startHum(); },
     click() { tick(0, 2600); tick(0.055, 1700); },
     boop() { tone('sine', 180, 520, 0.18, 0.16); tone('sine', 520, 0, 0.25, 0.08, 0.16); },
     off() { tone('sine', 520, 70, 0.4, 0.14); },
@@ -1514,7 +1514,7 @@ layout();
 (() => {
   const bgm = $('#bgm'), btn = $('#music'), topBtn = $('#sound');
   const sliders = [$('#volBottom'), $('#volTop')];
-  let on = true, vol = 20, started = false, fade;
+  let on = true, vol = 10, started = false, fade;
   try {
     on = localStorage.getItem('gos-music') !== '0';
     const v = parseInt(localStorage.getItem('gos-vol'), 10);
@@ -1551,7 +1551,7 @@ layout();
   const toggle = (e) => {
     e.stopPropagation();
     on = !(on && vol > 0);
-    if (on && vol === 0) vol = 20;
+    if (on && vol === 0) vol = 10;
     save(); paint();
     if (on) { if (bgm.paused) play(); else ramp(target()); }
     else { clearInterval(fade); bgm.volume = 0; bgm.pause(); }
