@@ -1550,6 +1550,8 @@ layout();
   };
   const toggle = (e) => {
     e.stopPropagation();
+    // Autoplay was blocked: the button shows "on" but nothing is playing yet. The first click starts the music instead of muting it.
+    if (on && vol > 0 && !started && bgm.paused) { play(); return; }
     on = !(on && vol > 0);
     if (on && vol === 0) vol = 10;
     save(); paint();
@@ -1595,9 +1597,15 @@ layout();
     w.addEventListener('focusout', (e) => { if (!w.contains(e.relatedTarget)) hide(); });
     w.querySelectorAll('input').forEach((s) => ['input', 'pointerdown', 'keydown'].forEach((t) => s.addEventListener(t, show)));
   });
-  const kick = (e) => { if (!started && !(e.target.closest && e.target.closest('.vol-wrap'))) play(); };
-  addEventListener('pointerdown', kick, true);
-  addEventListener('keydown', kick, true);
+  // Browsers block audio until a real user gesture. Retry on every gesture type until it actually plays.
+  const GESTURES = ['pointerdown', 'pointerup', 'mousedown', 'click', 'touchend', 'keydown'];
+  const kick = (e) => {
+    if (started) return;
+    if (e.target && e.target.closest && e.target.closest('.vol-wrap')) return;
+    if (on && vol > 0 && bgm.paused) play();
+  };
+  GESTURES.forEach((t) => addEventListener(t, kick, true));
+  bgm.addEventListener('playing', () => { started = true; GESTURES.forEach((t) => removeEventListener(t, kick, true)); });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) bgm.pause(); else if (on && vol > 0 && started) bgm.play().catch(() => {});
   });
