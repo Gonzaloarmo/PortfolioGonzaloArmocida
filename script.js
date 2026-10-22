@@ -318,7 +318,7 @@ function typeText() {
     const vt = video.paused && video.currentTime === 0 ? (performance.now() - t0) / 1000 : video.currentTime;
     if (vt >= sec) fn(); else later(() => at(sec, fn), 30);
   };
-  at(1.25, () => run(t1, 'Gonzalo Armocida', 1, 70, () => at(4.35, () => run(t2, 'I design animated websites that make brands stand out.', 1, 27))));
+  at(1.25, () => run(t1, 'Gonzalo\nArmocida', 1, 70, () => at(4.35, () => run(t2, 'I design animated websites that make brands stand out.', 1, 27))));
 }
 function placeScreen() {
   const W = innerWidth, H = innerHeight, s = Math.max(W / VID.w, H / VID.h);
@@ -446,7 +446,7 @@ offEl.addEventListener('click', powerOn);
 
 /* ---------- notification ---------- */
 let notifTimer;
-function notify(title = 'Welcome to Gonzalo OS', body = 'Double-click a project to open it.') {
+function notify(title = 'Welcome to Gonzalo OS', body = (isMobile() || matchMedia('(pointer: coarse)').matches) ? 'Tap a project to open it.' : 'Double-click a project to open it.') {
   clearTimeout(notifTimer);
   $('#notifTitle').textContent = title;
   $('#notifBody').textContent = body;
@@ -671,10 +671,15 @@ function defaultPos(it) {
     if (x < 1153 * unit + 16) { x = (470 + it.k * 190) * unit; y = 575 * unit; }
     return { x: x / SW, y: y / SH };
   }
-  const idx = it.kind === 'proj' ? it.k : 3 + it.k, col = idx % 3, row = Math.floor(idx / 3);
-  const W = innerWidth, H = innerHeight, s = 156 * 0.62, colW = Math.min(W * 0.31, 150);
-  const cx = W / 2 + (col - 1) * colW, y0 = Math.max(52, H * 0.1);
-  return { x: (cx - s / 2) / W, y: (y0 + row * (s + 52)) / H };
+  // mobile: projects in a row at the top, system icons in a row above the dock / music button
+  const W = innerWidth, H = innerHeight, s = 84, iconH = 96;
+  if (it.kind === 'proj') {
+    const colW = Math.min(W * 0.3, 120), cx = W / 2 + (it.k - 1) * colW, y0 = Math.max(56, H * 0.1);
+    return { x: (cx - s / 2) / W, y: y0 / H };
+  }
+  const colW = Math.min((W - 16) / 4, 100), cx = W / 2 + (it.k - 1.5) * colW;
+  const y = Math.max(56 + iconH + 40, H * 0.87 - 12 - 46 - 16 - iconH);
+  return { x: (cx - s / 2) / W, y: y / H };
 }
 function placeIcon(it) {
   const pos = it.pos[mode] || defaultPos(it);
@@ -1326,7 +1331,7 @@ function openAbout() {
 }
 function openHelp() {
   openWin({ id: 'help', title: 'How to use', w: 420, h: 240, icon: svgIcon('g'), slotIcon: svgSlot('g'),
-    body: `<div class="pane"><p>Double-click to open a project. Drag the icons around.</p></div>` });
+    body: `<div class="pane"><p>${(isMobile() || matchMedia('(pointer: coarse)').matches) ? 'Tap to open a project. Drag the icons around.' : 'Double-click to open a project. Drag the icons around.'}</p></div>` });
 }
 function openMail() {
   const win = openWin({ id: 'mail', title: 'Mail', w: 400, h: 250, dockBtn: dockMail, from: dockMail,

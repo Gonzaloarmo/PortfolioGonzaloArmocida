@@ -93,7 +93,7 @@ svg{display:block}
 #stage{position:absolute;left:50%;top:50%;width:max(100vw,calc(100vh*1672/940));width:max(100vw,calc(100dvh*1672/940));aspect-ratio:1672/940;transform:translate(-50%,-50%);background:#3e3c9b}
 #icons{position:absolute;inset:0;pointer-events:none}
 #icons .icon{pointer-events:auto}
-#mlayer{position:absolute;inset:0;pointer-events:none;--u:.62px}
+#mlayer{position:absolute;inset:0;pointer-events:none;--u:.5px}
 #mlayer #icons{pointer-events:none}
 
 .icon{position:absolute;width:calc(var(--u)*156);display:flex;flex-direction:column;align-items:center;gap:calc(var(--u)*12);background:none;border:0;padding:0;touch-action:none;user-select:none;-webkit-user-select:none}
@@ -237,6 +237,15 @@ body.dragging{user-select:none}
 .mail .ok{min-height:22px;color:var(--peach)}
 
 @media (max-width:699px){
+  #hello{width:calc(100vw - 48px);max-width:100%}
+  #hello p{white-space:pre-line}
+  .h1{font-size:min(11vw,52px);line-height:1.05}
+  .h2{margin-top:.6em!important;font-size:min(6.4vw,30px);line-height:1.12;text-wrap:balance}
+  #mlayer .label{font-size:11px;--px:2px;padding:2px 6px}
+  #mlayer .icon{width:84px;gap:6px}
+  #mlayer .icon img{width:64px;height:64px}
+  #mlayer .icon .art{width:64px;height:64px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(3px 3px 0 rgba(27,22,64,.7))}
+  #mlayer .icon .art svg{width:50px}
   .mb-hide{display:none!important}
   .win{left:0!important;top:33px!important;width:100vw!important;height:calc(100% - 33px)!important;min-width:0;box-shadow:none}
   .grip,.wmax{display:none}
@@ -244,9 +253,8 @@ body.dragging{user-select:none}
   .wbtn{width:40px;height:36px}
   .nbtn,.open,.url{height:40px}
   #hint{bottom:84px}
-  #notif{right:16px;left:16px;width:auto;bottom:calc(13% + 12px)}
+  #notif{right:16px;left:16px;width:auto;top:42px;bottom:auto}
   #musicWrap{bottom:calc(13% + 12px)}
-  body:has(#notif:not([hidden])) #musicWrap{bottom:calc(13% + 140px)}
 }
 /* ---------- scene ---------- */
 #scene{position:absolute;inset:0}
