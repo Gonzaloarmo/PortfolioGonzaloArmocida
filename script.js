@@ -209,8 +209,20 @@ const sfx = (() => {
     s.connect(bp); env(bp, t, 0.22, 0.03);
     s.start(t);
   };
+  const key = (vol = 0.08, heavy) => {
+    const c = ensure(); if (!c) return;
+    const t = c.currentTime, s = c.createBufferSource(), bp = c.createBiquadFilter();
+    s.buffer = noise(0.025);
+    bp.type = 'bandpass'; bp.frequency.value = (heavy ? 1100 : 1900) + Math.random() * 1400; bp.Q.value = 2.2;
+    s.connect(bp); env(bp, t, vol * (0.75 + Math.random() * 0.5), 0.022);
+    s.start(t);
+    tone('sine', heavy ? 140 : 210 + Math.random() * 60, 0, 0.03, vol * 0.35);
+  };
   const api = {
     get on() { return on; },
+    key() { key(); },
+    enter() { key(0.11, true); },
+    tap() { tick(0, 3400); },
     set(v) {
       on = v;
       try { localStorage.setItem('gos-sound', v ? '1' : '0'); } catch (e) {}
@@ -242,6 +254,10 @@ const sfx = (() => {
   return api;
 })();
 addEventListener('pointerdown', () => sfx.wake(), true);
+addEventListener('pointerdown', (e) => {
+  const b = e.target.closest && e.target.closest('button, a, .mb-btn');
+  if (b && !b.closest('.icon')) sfx.tap();
+});
 addEventListener('keydown', () => sfx.wake(), true);
 
 /* ---------- intro ---------- */
@@ -274,10 +290,17 @@ function typeText() {
   const run = (el, str, i, speed, next) => {
     el.parentNode.appendChild(caret);
     el.textContent = str.slice(0, i);
+    if (str[i - 1] && str[i - 1] !== ' ') sfx.key();
     if (i >= str.length) return next && next();
     later(() => run(el, str, i + 1, speed, next), speed);
   };
-  later(() => run(t1, 'Gonzalo Armocida', 1, 75, () => later(() => run(t2, 'I design animated websites that make brands stand out.', 1, 32), 240)), 400);
+  // synced to the hands in intro.mp4: left hand types the name (~1.25s), both hands type the tagline (~4.35s)
+  const t0 = performance.now();
+  const at = (sec, fn) => {
+    const vt = video.paused && video.currentTime === 0 ? (performance.now() - t0) / 1000 : video.currentTime;
+    if (vt >= sec) fn(); else later(() => at(sec, fn), 30);
+  };
+  at(1.25, () => run(t1, 'Gonzalo Armocida', 1, 70, () => at(4.35, () => run(t2, 'I design animated websites that make brands stand out.', 1, 27))));
 }
 function placeScreen() {
   const W = innerWidth, H = innerHeight, s = Math.max(W / VID.w, H / VID.h);
@@ -302,7 +325,7 @@ function zoom() {
     later(boot, 1300);
   }, 220);
 }
-video.addEventListener('ended', zoom);
+video.addEventListener('ended', () => later(zoom, 1600));
 video.querySelector('source:last-of-type').addEventListener('error', () => { if (phase === 'intro') showDesk(); });
 intro.addEventListener('click', () => { if (phase === 'intro') zoom(); });
 skip.addEventListener('click', skipAll);
@@ -590,7 +613,20 @@ const icons = [
 const iconEl = (id) => (icons.find((o) => (o.sys ? o.sys.id : o.p.id) === id) || {}).el;
 const openIcon = (it) => { sfx.click(); hidePreview(); it.open(); };
 
+// Cover the viewport, but crop from the sky: keep the drawn dock (y=912 of fondo.png) >= 12px above the bottom edge.
+// The bg layers are 104% of the stage, offset -2%.
+const DOCK_Y = 912 / IMG_H;
+let stageTop = 0;
+function positionStage() {
+  const H = desk.clientHeight || innerHeight, SH = stage.offsetHeight;
+  const centered = (H - SH) / 2;
+  const dockMax = H - 12 - SH * (BG * DOCK_Y - (BG - 1) / 2);
+  stageTop = clamp(Math.min(centered, dockMax), H - SH * (1 + (BG - 1) / 2), SH * (BG - 1) / 2);
+  stage.style.top = stageTop + 'px';
+  stage.style.transform = 'translateX(-50%)';
+}
 function layout() {
+  positionStage();
   unit = stage.offsetWidth / IMG_W;
   stage.style.setProperty('--u', unit + 'px');
   lyBg.style.setProperty('--u', unit * BG + 'px');
@@ -604,7 +640,7 @@ function layout() {
 function defaultPos(it) {
   if (mode === 'desk') {
     if (it.kind === 'proj') return { x: it.p.x / IMG_W, y: it.p.y / IMG_H };
-    const SW = stage.offsetWidth, SH = stage.offsetHeight, cl = (SW - innerWidth) / 2, ct = (SH - innerHeight) / 2;
+    const SW = stage.offsetWidth, SH = stage.offsetHeight, cl = (SW - innerWidth) / 2, ct = -stageTop;
     const iconH = 97 * unit + 40, pref = Math.max(176 * unit, 97 * unit + 62);
     const avail = innerHeight - 48 - 190 - iconH;
     let step = Math.min(pref, avail / 3), col = 0, row = it.k;
@@ -825,7 +861,7 @@ const MENUS = {
     '-',
     { label: 'Close window', key: 'Esc', run: () => { const w = frontWin(); if (w) closeWin(w); } },
   ],
-  view: [{ label: 'Arrange icons', run: () => arrange() }, { label: 'Replay intro', run: () => startIntro() }],
+  view: [{ label: 'Arrange icons', run: () => arrange() }, { label: 'Replay intro', run: () => startIntro() }, '-', { get label() { return sfx.on ? 'System sounds: on' : 'System sounds: off'; }, run: () => { sfx.set(!sfx.on); announce(sfx.on ? 'System sounds on' : 'System sounds off'); } }],
   help: [{ label: 'How to use', run: () => openHelp() }, { label: 'About Gonzalo OS', run: () => openAbout() }],
 };
 const CTX = [{ label: 'Arrange icons', run: () => arrange() }, { label: 'Replay intro', run: () => startIntro() }, '-', { label: 'About Gonzalo OS', run: () => openAbout() }];
@@ -1014,7 +1050,7 @@ function openWin(o) {
   return win;
 }
 function renderSlots() {
-  [...slotsEl.children].forEach((s, i) => (s.style.left = ((956 + i * 72) / IMG_W) * 100 + '%'));
+  [...slotsEl.children].forEach((s, i) => (s.style.left = ((990 + i * 72) / IMG_W) * 100 + '%'));
 }
 function dragger(handle, win, apply, weighted) {
   handle.addEventListener('pointerdown', (e) => {
@@ -1301,6 +1337,10 @@ function openTerminal() {
   const term = win.querySelector('.term'), out = win.querySelector('.tout'), form = win.querySelector('form'), input = win.querySelector('.tin');
   const hist = [];
   let hi = 0, queue = Promise.resolve();
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') sfx.enter();
+    else if (e.key.length === 1 || e.key === 'Backspace') sfx.key();
+  });
   const typeLine = (text, cls) => new Promise((res) => {
     const line = document.createElement('div');
     if (cls) line.className = cls;
@@ -1312,6 +1352,7 @@ function openTerminal() {
       i += Math.max(1, Math.ceil(text.length / 60));
       line.textContent = text.slice(0, i);
       term.scrollTop = term.scrollHeight;
+      if ((i & 3) === 1) sfx.key();
       if (i < text.length) setTimeout(step, 14); else fin();
     };
     step();
@@ -1480,7 +1521,7 @@ layout();
     if (v >= 0 && v <= 100) vol = v;
   } catch (e) {}
   bgm.volume = 0;
-  const target = () => (on ? vol / 100 : 0);
+  const target = () => (on ? (vol / 100) * 0.5 : 0);
   const ramp = (to, done) => {
     clearInterval(fade);
     fade = setInterval(() => {
@@ -1515,7 +1556,6 @@ layout();
     if (on) { if (bgm.paused) play(); else ramp(target()); }
     else { clearInterval(fade); bgm.volume = 0; bgm.pause(); }
     bgm.muted = !on;
-    sfx.set(on);
     if (typeof announce === 'function') announce(on ? 'Music on' : 'Music off');
   };
   btn.addEventListener('click', toggle);
