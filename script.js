@@ -280,9 +280,27 @@ function startIntro() {
   hello.classList.remove('out');
   hint.classList.remove('out');
   try { video.currentTime = 0; } catch (e) {}
+  placeScreen();
+  t1.textContent = t2.textContent = '';
+  // Browsers only allow sound after a click/key. Wait for one so video, typing and music start together.
+  const activated = navigator.userActivation ? navigator.userActivation.hasBeenActive : false;
+  if (!activated) {
+    phase = 'gate';
+    skip.hidden = true;
+    intro.classList.add('gated');
+    gate.hidden = false;
+    return;
+  }
+  playIntro();
+}
+const gate = $('#gate'), gateStart = $('#gateStart'), gateSkip = $('#gateSkip');
+function playIntro() {
+  phase = 'intro';
+  gate.hidden = true;
+  intro.classList.remove('gated');
+  skip.hidden = false;
   const p = video.play();
   if (p && p.catch) p.catch(() => later(zoom, 4000));
-  placeScreen();
   typeText();
 }
 function typeText() {
@@ -327,7 +345,11 @@ function zoom() {
 }
 video.addEventListener('ended', () => later(zoom, 1600));
 video.querySelector('source:last-of-type').addEventListener('error', () => { if (phase === 'intro') showDesk(); });
-intro.addEventListener('click', () => { if (phase === 'intro') zoom(); });
+intro.addEventListener('click', (e) => {
+  if (phase === 'gate') { if (!e.target.closest('#gateSkip')) playIntro(); return; }
+  if (phase === 'intro') zoom();
+});
+gateSkip.addEventListener('click', (e) => { e.stopPropagation(); skipAll(); });
 skip.addEventListener('click', skipAll);
 function skipAll() { clearTimers(); bootEl.hidden = true; showDesk(); }
 
@@ -1456,6 +1478,12 @@ document.addEventListener('keydown', (e) => {
     if (phase !== 'desk') { e.preventDefault(); skipAll(); return; }
     const w = frontWin();
     if (w) { e.preventDefault(); closeWin(w); }
+    return;
+  }
+  if (phase === 'gate') {
+    if (MOD.includes(e.key) || e.target === gateSkip || e.target === gateStart) return;
+    e.preventDefault();
+    playIntro();
     return;
   }
   if (phase === 'intro') {
