@@ -481,9 +481,10 @@ body.dragging{user-select:none}
 /* ======= Edit your info here ======= */
 const CONFIG = {
   projects: [
-    { id: 'terrace', name: 'Terrace', url: 'https://terracefest.vercel.app/', desc: 'The party is upstairs', icon: 'assets/icono_terrace.png', x: 528, y: 330 },
-    { id: 'trama', name: 'Trama', url: 'https://tramastore.vercel.app/', desc: 'Caps, bucket hats and beanies', icon: 'assets/icono_trama.png', x: 761, y: 330 },
-    { id: 'crealo', name: 'Crealo', url: 'https://crealo-ten.vercel.app/', desc: '[SHORT DESCRIPTION]', icon: 'assets/icono_crealo.png', x: 997, y: 330 },
+    { id: 'terrace', name: 'Terrace', url: 'https://terracefest.vercel.app/', desc: 'The party is upstairs', icon: 'assets/icono_terrace.png', x: 411, y: 330 },
+    { id: 'trama', name: 'Trama', url: 'https://tramastore.vercel.app/', desc: 'Caps, bucket hats and beanies', icon: 'assets/icono_trama.png', x: 645, y: 330 },
+    { id: 'crealo', name: 'Crealo', url: 'https://crealo-ten.vercel.app/', desc: '[SHORT DESCRIPTION]', icon: 'assets/icono_crealo.png', x: 879, y: 330 },
+    { id: 'nexo', name: 'Nexo', url: 'https://nexeweb.vercel.app/', desc: '[SHORT DESCRIPTION]', icon: 'assets/icono_nexo.png', x: 1113, y: 330 },
   ],
   behance: 'https://www.behance.net/gonzaloarmocida1',
   linkedin: 'https://www.linkedin.com/in/gonzalo-armocida',
@@ -1148,13 +1149,13 @@ function defaultPos(it) {
     let step = Math.min(pref, avail / 3), col = 0, row = it.k;
     if (step < iconH + 10) { step = Math.min(pref, Math.max(iconH + 10, avail)); col = it.k >> 1; row = it.k & 1; }
     let x = cl + innerWidth - 22 - 156 * unit - col * Math.max(170 * unit, 130), y = ct + 48 + row * step;
-    if (x < 1153 * unit + 16) { x = (470 + it.k * 190) * unit; y = 575 * unit; }
+    if (x < 1269 * unit + 16) { x = (470 + it.k * 190) * unit; y = 575 * unit; }
     return { x: x / SW, y: y / SH };
   }
   // mobile: projects in a row at the top, system icons in a row above the dock / music button
   const W = innerWidth, H = innerHeight, s = 84, iconH = 96;
   if (it.kind === 'proj') {
-    const colW = Math.min(W * 0.3, 120), cx = W / 2 + (it.k - 1) * colW, y0 = Math.max(56, H * 0.1);
+    const n = CONFIG.projects.length, colW = Math.min((W - 16) / n, n > 3 ? 100 : 120), cx = W / 2 + (it.k - (n - 1) / 2) * colW, y0 = Math.max(56, H * 0.1);
     return { x: (cx - s / 2) / W, y: y0 / H };
   }
   const colW = Math.min((W - 16) / 4, 100), cx = W / 2 + (it.k - 1.5) * colW;
@@ -1302,8 +1303,8 @@ function showPreview(it) {
   pvTitle.textContent = it.name;
   if (pvLoaded !== id) {
     pvLoaded = id;
-    pvVid.poster = `assets/preview_${id}_poster.jpg`;
-    pvVid.innerHTML = `<source src="assets/preview_${id}.webm" type="video/webm"><source src="assets/preview_${id}.mp4" type="video/mp4">`;
+    pvVid.poster = it.p.gif || `assets/preview_${id}_poster.jpg`;
+    pvVid.innerHTML = it.p.gif ? '' : `<source src="assets/preview_${id}.webm" type="video/webm"><source src="assets/preview_${id}.mp4" type="video/mp4">`;
     pvVid.load();
   }
   pv.classList.remove('out');
